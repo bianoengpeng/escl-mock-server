@@ -1,11 +1,17 @@
 mod cli;
 mod escl_server;
+mod model;
 
+use crate::model::ScanJob;
 use actix_web::{web, App, HttpServer};
+use std::collections::HashMap;
+use tokio::sync::Mutex;
+use uuid::Uuid;
 
 struct AppState {
     scanner_caps: String,
     image_path: Option<String>,
+    scan_jobs: Mutex<HashMap<Uuid, ScanJob>>
 }
 
 #[actix_web::main]
@@ -21,7 +27,8 @@ async fn main() -> std::io::Result<()> {
 
     let app_data = web::Data::new(AppState {
         scanner_caps,
-        image_path: args.served_image
+        image_path: args.served_image,
+        scan_jobs: Mutex::new(HashMap::new())
     });
 
     let http_server = HttpServer::new(move || {
