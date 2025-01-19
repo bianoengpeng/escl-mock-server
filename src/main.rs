@@ -5,6 +5,7 @@ use actix_web::{web, App, HttpServer};
 
 struct AppState {
     scanner_caps: String,
+    image_path: Option<String>,
 }
 
 #[actix_web::main]
@@ -19,7 +20,8 @@ async fn main() -> std::io::Result<()> {
     };
 
     let app_data = web::Data::new(AppState {
-        scanner_caps
+        scanner_caps,
+        image_path: args.served_image
     });
 
     let http_server = HttpServer::new(move || {

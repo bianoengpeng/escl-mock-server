@@ -1,6 +1,7 @@
 use crate::AppState;
 use actix_web::http::{header, StatusCode};
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
+use tokio_util::io::ReaderStream;
 use uuid::Uuid;
 
 #[get("/ScannerCapabilities")]
@@ -26,9 +27,18 @@ async fn scan_job(req: HttpRequest) -> impl Responder {
 }
 
 #[get("/ScanJobs/{uuid}/NextDocument")]
-async fn next_doc() -> impl Responder {
+async fn next_doc(data: web::Data<AppState>) -> impl Responder {
     println!("Document is retrieved");
-    ""
+    if data.image_path.is_some() {
+        let file = tokio::fs::File::open(data.image_path.as_ref().unwrap()).await;
+        let stream = ReaderStream::new(file.unwrap());
+        HttpResponse::Ok()
+            .content_type("image/jpeg")
+            .streaming(stream)
+    } else {
+        HttpResponse::Ok()
+            .body(&include_bytes!("../res/example_image.jpg")[..])
+    }
 }
 
 pub(crate) async fn not_found(req: HttpRequest) -> impl Responder {

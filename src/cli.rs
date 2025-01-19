@@ -11,6 +11,8 @@ pub(crate) struct Cli {
     pub(crate) binding_address: String,
     #[arg(short = 'c', long = "scannercaps")]
     pub(crate) scanner_caps_file: Option<String>,
+    #[arg(short = 'i', long = "image")]
+    pub(crate) served_image: Option<String>,
     #[arg(value_parser = clap::value_parser!(u16).range(1..), short = 'p', long = "port", default_value = "8080")]
     pub(crate) port: u16,
 }
