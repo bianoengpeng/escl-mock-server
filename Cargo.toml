@@ -1,0 +1,18 @@
+[package]
+name = "escl-mock-server"
+description = "An HTTP server mocking a scanner supporting the eSCL protocol"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4.9.0"
+clap = { version = "4.5.26", features = ["derive"] }
+regex = "1.11.1"
+
+[dependencies.uuid]
+version = "1.12.0"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
