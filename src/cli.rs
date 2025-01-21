@@ -28,6 +28,8 @@ use std::fmt::{Display, Formatter};
 pub(crate) struct Cli {
     #[arg(short = 'a', long = "bindaddr", default_value = "127.0.0.1")]
     pub(crate) binding_address: String,
+    #[arg(short = 's', long = "scope", default_value = "/eSCL")]
+    pub(crate) scope: String,
     #[arg(short = 'c', long = "scannercaps")]
     pub(crate) scanner_caps_file: Option<String>,
     #[arg(short = 'i', long = "image")]
@@ -38,7 +40,7 @@ pub(crate) struct Cli {
 
 impl Display for Cli {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Binding to {}:{}", self.binding_address, self.port)
+        writeln!(f, "Binding to {}:{}\nScope is: \"{}\"\nPossible URL: http://{0}:{1}/{2}", self.binding_address, self.port, self.scope)
     }
 }
 

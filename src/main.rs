@@ -53,7 +53,7 @@ async fn main() -> std::io::Result<()> {
     let http_server = HttpServer::new(move || {
         App::new()
             .app_data(app_data.clone())
-            .service(web::scope("/eSCL")
+            .service(web::scope(&args.scope)
                 .service(escl_server::scanner_capabilities)
                 .service(escl_server::scan_job)
                 .service(escl_server::next_doc)
