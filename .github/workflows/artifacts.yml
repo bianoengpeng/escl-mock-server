@@ -1,0 +1,52 @@
+name: Artifact build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-artifacts:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v17
+        with:
+          # Mostly to avoid GitHub rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install rustup targets
+        run: nix develop --command rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android x86_64-unknown-linux-gnu
+      - name: Build android executables
+        run: nix develop --command cargo ndk -t armeabi-v7a -t arm64-v8a -t x86_64 build --release
+      - name: Run linux x86-64 build
+        run: nix develop --command cargo build --target=x86_64-unknown-linux-gnu --release
+      - name: Upload android-arm64-v8a
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-arm64-v8a
+          path: target/aarch64-linux-android/release/escl-mock-server
+      - name: Upload android-armv7
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-armv7
+          path: target/armv7-linux-androideabi/release/escl-mock-server
+      - name: Upload android-x86-64
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-x86-64
+          path: target/x86_64-linux-android/release/escl-mock-server
+      - name: Upload x86-64-unknown-linux-gnu
+        uses: actions/upload-artifact@v4
+        with:
+          name: x86-64-unknown-linux-gnu
+          path: target/x86-64-unknown-linux-gnu/release/escl-mock-server
