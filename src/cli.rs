@@ -40,7 +40,11 @@ pub(crate) struct Cli {
 
 impl Display for Cli {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Binding to {}:{}\nScope is: \"{}\"\nPossible URL: http://{0}:{1}/{2}", self.binding_address, self.port, self.scope)
+        writeln!(
+            f,
+            "Binding to {}:{}\nScope is: \"{}\"\nPossible URL: http://{0}:{1}/{2}",
+            self.binding_address, self.port, self.scope
+        )
     }
 }
 
@@ -55,10 +59,9 @@ fn validate_addr(args: &Cli) {
     let is_ipv6 = ipv6_regex.unwrap().is_match(&args.binding_address);
 
     if !(is_ipv4 || is_ipv6) {
-        Cli::command().error(
-            ErrorKind::ValueValidation,
-            "Invalid address"
-        ).exit()
+        Cli::command()
+            .error(ErrorKind::ValueValidation, "Invalid address")
+            .exit()
     }
 }
 

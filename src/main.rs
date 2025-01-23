@@ -30,7 +30,7 @@ use uuid::Uuid;
 struct AppState {
     scanner_caps: String,
     image_path: Option<String>,
-    scan_jobs: Mutex<HashMap<Uuid, ScanJob>>
+    scan_jobs: Mutex<HashMap<Uuid, ScanJob>>,
 }
 
 #[actix_web::main]
@@ -47,16 +47,17 @@ async fn main() -> std::io::Result<()> {
     let app_data = web::Data::new(AppState {
         scanner_caps,
         image_path: args.served_image,
-        scan_jobs: Mutex::new(HashMap::new())
+        scan_jobs: Mutex::new(HashMap::new()),
     });
 
     let http_server = HttpServer::new(move || {
         App::new()
             .app_data(app_data.clone())
-            .service(web::scope(&args.scope)
-                .service(escl_server::scanner_capabilities)
-                .service(escl_server::scan_job)
-                .service(escl_server::next_doc)
+            .service(
+                web::scope(&args.scope)
+                    .service(escl_server::scanner_capabilities)
+                    .service(escl_server::scan_job)
+                    .service(escl_server::next_doc),
             )
             .default_service(web::route().to(escl_server::not_found))
     })

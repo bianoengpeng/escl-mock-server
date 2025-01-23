@@ -36,19 +36,20 @@ async fn scanner_capabilities(data: web::Data<AppState>) -> impl Responder {
 
 #[post("/ScanJobs")]
 async fn scan_job(req: HttpRequest) -> impl Responder {
-
     let full_url = req.full_url();
     let generated_uuid = Uuid::new_v4();
 
     HttpResponse::build(StatusCode::CREATED)
-        .insert_header(
-            (header::LOCATION, format!("{full_url}/{generated_uuid}"))
-        )
+        .insert_header((header::LOCATION, format!("{full_url}/{generated_uuid}")))
         .finish()
 }
 
 #[get("/ScanJobs/{uuid}/NextDocument")]
-async fn next_doc(req: HttpRequest, path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
+async fn next_doc(
+    req: HttpRequest,
+    path: web::Path<String>,
+    data: web::Data<AppState>,
+) -> impl Responder {
     let full_url = req.full_url();
 
     println!("Document is retrieved");
@@ -56,15 +57,18 @@ async fn next_doc(req: HttpRequest, path: web::Path<String>, data: web::Data<App
     let uuid = &Uuid::from_str(&path.into_inner()).unwrap();
 
     match data_guard.get_mut(uuid) {
-        None => { data_guard.insert(*uuid, ScanJob { retrieved_pages: 1 }); }
-        Some(job) => { job.retrieved_pages += 1; }
+        None => {
+            data_guard.insert(*uuid, ScanJob { retrieved_pages: 1 });
+        }
+        Some(job) => {
+            job.retrieved_pages += 1;
+        }
     }
 
     println!("Document job data: {}", data_guard.get(uuid).unwrap());
 
     if data_guard.get(uuid).unwrap().retrieved_pages > 20 {
-        return HttpResponse::NotFound()
-            .finish()
+        return HttpResponse::NotFound().finish();
     }
 
     if data.image_path.is_some() {
@@ -83,8 +87,10 @@ async fn next_doc(req: HttpRequest, path: web::Path<String>, data: web::Data<App
 }
 
 pub(crate) async fn not_found(req: HttpRequest) -> impl Responder {
-    println!("The following path was accessed but is not implemented: {}", req.path());
+    println!(
+        "The following path was accessed but is not implemented: {}",
+        req.path()
+    );
 
-    HttpResponse::build(StatusCode::NOT_FOUND)
-        .body("Not found 404")
+    HttpResponse::build(StatusCode::NOT_FOUND).body("Not found 404")
 }

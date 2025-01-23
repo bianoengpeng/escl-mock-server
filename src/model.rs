@@ -25,9 +25,7 @@ pub(crate) struct ScanJob {
 
 impl Default for ScanJob {
     fn default() -> Self {
-        ScanJob {
-            retrieved_pages: 0
-        }
+        ScanJob { retrieved_pages: 0 }
     }
 }
 
