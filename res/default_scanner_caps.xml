@@ -4,12 +4,12 @@
         xmlns:pwg="http://www.pwg.org/schemas/2010/12/sm"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://schemas.hp.com/imaging/escl/2011/05/03 ../../schemas/eSCL-1_92.xsd">
-    <pwg:Version>2.62</pwg:Version>
-    <pwg:MakeAndModel>Brother MFC-L8690CDW series</pwg:MakeAndModel>
-    <pwg:SerialNumber>...</pwg:SerialNumber>
-    <scan:UUID>00000000-0000-1000-8000-0018d7024a10</scan:UUID>
-    <scan:AdminURI>http://192.168.44.128/net/net/airprint.html</scan:AdminURI>
-    <scan:IconURI>http://192.168.44.128/icons/device-icons-128.png</scan:IconURI>
+    <pwg:Version>2.97</pwg:Version>
+    <pwg:MakeAndModel>eSCL Scanner</pwg:MakeAndModel>
+    <pwg:SerialNumber>ESC-MOCK-001</pwg:SerialNumber>
+    <scan:UUID>550e8400-e29b-41d4-a716-446655440000</scan:UUID>
+    <scan:AdminURI>DYNAMIC_ADMIN_URI</scan:AdminURI>
+    <scan:IconURI>DYNAMIC_ICON_URI</scan:IconURI>
     <scan:Platen>
         <scan:PlatenInputCaps>
             <scan:MinWidth>16</scan:MinWidth>
