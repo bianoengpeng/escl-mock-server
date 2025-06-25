@@ -19,18 +19,37 @@
 
 use std::fmt::{Display, Formatter};
 
+#[derive(Debug, Clone)]
+pub(crate) enum ScanSource {
+    Platen,  // 平板
+    Adf,     // 自动输稿器
+}
+
+impl Default for ScanSource {
+    fn default() -> Self {
+        ScanSource::Platen
+    }
+}
+
 pub(crate) struct ScanJob {
     pub retrieved_pages: u32,
+    pub scan_source: ScanSource,
+    pub max_pages: u32,
 }
 
 impl Default for ScanJob {
     fn default() -> Self {
-        ScanJob { retrieved_pages: 0 }
+        ScanJob { 
+            retrieved_pages: 0,
+            scan_source: ScanSource::Platen,
+            max_pages: 1,  // 平板默认只有1页
+        }
     }
 }
 
 impl Display for ScanJob {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "retrieved_pages = {}", self.retrieved_pages)
+        write!(f, "retrieved_pages = {}, source = {:?}, max_pages = {}", 
+               self.retrieved_pages, self.scan_source, self.max_pages)
     }
 }

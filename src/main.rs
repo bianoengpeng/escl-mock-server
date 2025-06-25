@@ -21,7 +21,7 @@ mod cli;
 mod escl_server;
 mod model;
 
-use crate::model::ScanJob;
+use crate::model::{ScanJob, ScanSource};
 use actix_web::{web, App, HttpServer};
 use std::collections::HashMap;
 use tokio::sync::Mutex;
@@ -32,6 +32,7 @@ struct AppState {
     scanner_caps: String,
     image_path: Option<String>,
     scan_jobs: Mutex<HashMap<Uuid, ScanJob>>,
+    scan_sources: Mutex<HashMap<Uuid, ScanSource>>,  // 存储每个扫描任务的扫描源
 }
 
 #[actix_web::main]
@@ -51,6 +52,7 @@ async fn main() -> std::io::Result<()> {
         scanner_caps,
         image_path: args.served_image,
         scan_jobs: Mutex::new(HashMap::new()),
+        scan_sources: Mutex::new(HashMap::new()),
     });
 
     // 克隆需要在多个地方使用的值

@@ -17,7 +17,7 @@
  *     SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-use crate::model::ScanJob;
+use crate::model::{ScanJob, ScanSource};
 use crate::AppState;
 use actix_web::http::{header, StatusCode};
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
@@ -57,9 +57,32 @@ async fn scanner_status() -> impl Responder {
 }
 
 #[post("/ScanJobs")]
-async fn scan_job(req: HttpRequest) -> impl Responder {
+async fn scan_job(req: HttpRequest, body: web::Bytes, data: web::Data<AppState>) -> impl Responder {
     let full_url = req.full_url();
     let generated_uuid = Uuid::new_v4();
+    
+    // 尝试解析扫描请求以确定扫描源
+    let scan_source = if let Ok(body_str) = std::str::from_utf8(&body) {
+        println!("Scan request body: {}", body_str);
+        if body_str.contains("<scan:InputSource>Adf</scan:InputSource>") 
+           || body_str.contains("Feeder") 
+           || body_str.contains("ADF") {
+            println!("Detected ADF scan request");
+            ScanSource::Adf
+        } else {
+            println!("Detected Platen scan request");
+            ScanSource::Platen
+        }
+    } else {
+        println!("Could not parse scan request, defaulting to Platen");
+        ScanSource::Platen
+    };
+    
+    // 保存扫描源信息
+    {
+        let mut sources_guard = data.scan_sources.lock().await;
+        sources_guard.insert(generated_uuid, scan_source);
+    }
 
     HttpResponse::build(StatusCode::CREATED)
         .insert_header((header::LOCATION, format!("{full_url}/{generated_uuid}")))
@@ -78,18 +101,38 @@ async fn next_doc(
     let mut data_guard = data.scan_jobs.lock().await;
     let uuid = &Uuid::from_str(&path.into_inner()).unwrap();
 
+    // 获取扫描源信息
+    let scan_source = {
+        let sources_guard = data.scan_sources.lock().await;
+        sources_guard.get(uuid).cloned().unwrap_or(ScanSource::Platen)
+    };
+
     match data_guard.get_mut(uuid) {
         None => {
-            data_guard.insert(*uuid, ScanJob { retrieved_pages: 1 });
+            // 新的扫描任务
+            let max_pages = match scan_source {
+                ScanSource::Platen => 1,
+                ScanSource::Adf => 5,  // ADF模拟最多5页
+            };
+            data_guard.insert(*uuid, ScanJob { 
+                retrieved_pages: 1,
+                scan_source: scan_source.clone(),
+                max_pages,
+            });
         }
         Some(job) => {
             job.retrieved_pages += 1;
         }
     }
 
-    println!("Document job data: {}", data_guard.get(uuid).unwrap());
+    let current_job = data_guard.get(uuid).unwrap();
+    println!("Document job data: {}", current_job);
 
-    if data_guard.get(uuid).unwrap().retrieved_pages > 20 {
+    // 根据扫描源确定是否还有更多页面
+    let has_more_pages = current_job.retrieved_pages <= current_job.max_pages;
+
+    if !has_more_pages {
+        println!("No more pages available for {:?} source", current_job.scan_source);
         return HttpResponse::NotFound().finish();
     }
 
