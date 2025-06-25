@@ -19,7 +19,6 @@
 
 use clap::error::ErrorKind;
 use clap::{arg, CommandFactory, Parser};
-use regex::Regex;
 use std::fmt::{Display, Formatter};
 
 /// Search for a pattern in a file and display the lines that contain it.
@@ -48,21 +47,21 @@ impl Display for Cli {
     }
 }
 
-const IPV4_REGEX: &str = include_str!("../res/regexes/IPV4_REGEX");
-const IPV6_REGEX: &str = include_str!("../res/regexes/IPV6_REGEX");
+
 
 fn validate_addr(args: &Cli) {
-    let ipv4_regex = Regex::new(IPV4_REGEX);
-    let ipv6_regex = Regex::new(IPV6_REGEX);
+    println!("Validating address: {}", args.binding_address);
 
-    let is_ipv4 = ipv4_regex.unwrap().is_match(&args.binding_address);
-    let is_ipv6 = ipv6_regex.unwrap().is_match(&args.binding_address);
-
-    if !(is_ipv4 || is_ipv6) {
+    // 简化的地址验证 - 只检查基本格式
+    use std::net::IpAddr;
+    if args.binding_address.parse::<IpAddr>().is_err() {
+        println!("Invalid IP address format: {}", args.binding_address);
         Cli::command()
             .error(ErrorKind::ValueValidation, "Invalid address")
             .exit()
     }
+
+    println!("Address validation passed");
 }
 
 pub(crate) fn parse_cli() -> Cli {

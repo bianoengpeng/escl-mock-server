@@ -8,8 +8,8 @@
     <pwg:MakeAndModel>Brother MFC-L8690CDW series</pwg:MakeAndModel>
     <pwg:SerialNumber>...</pwg:SerialNumber>
     <scan:UUID>00000000-0000-1000-8000-0018d7024a10</scan:UUID>
-    <scan:AdminURI>http://192.168.200.122/net/net/airprint.html</scan:AdminURI>
-    <scan:IconURI>http://192.168.200.122/icons/device-icons-128.png</scan:IconURI>
+    <scan:AdminURI>http://192.168.44.128/net/net/airprint.html</scan:AdminURI>
+    <scan:IconURI>http://192.168.44.128/icons/device-icons-128.png</scan:IconURI>
     <scan:Platen>
         <scan:PlatenInputCaps>
             <scan:MinWidth>16</scan:MinWidth>

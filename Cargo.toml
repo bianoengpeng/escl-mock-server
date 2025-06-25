@@ -10,6 +10,7 @@ clap = { version = "4.5.26", features = ["derive"] }
 regex = "1.11.1"
 tokio = { version = "1.43.0", features = ["fs"] }
 tokio-util = "0.7.13"
+mdns-sd = "0.10.0"
 
 [dependencies.uuid]
 version = "1.12.0"

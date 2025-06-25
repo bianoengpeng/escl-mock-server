@@ -34,6 +34,28 @@ async fn scanner_capabilities(data: web::Data<AppState>) -> impl Responder {
         .body(data.scanner_caps.to_owned())
 }
 
+#[get("/ScannerStatus")]
+async fn scanner_status() -> impl Responder {
+    println!("ScannerStatus requested");
+
+    let status_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<scan:ScannerStatus xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                    xmlns:scan="http://schemas.hp.com/imaging/escl/2011/05/03" 
+                    xmlns:pwg="http://www.pwg.org/schemas/2010/12/sm" 
+                    xsi:schemaLocation="http://schemas.hp.com/imaging/escl/2011/05/03 eSCL.xsd">
+    <pwg:Version>2.0</pwg:Version>
+    <pwg:State>Idle</pwg:State>
+    <scan:ScannerState>Idle</scan:ScannerState>
+    <scan:ScannerStateReasons>
+        <scan:ScannerStateReason>None</scan:ScannerStateReason>
+    </scan:ScannerStateReasons>
+</scan:ScannerStatus>"#;
+
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/xml")
+        .body(status_xml)
+}
+
 #[post("/ScanJobs")]
 async fn scan_job(req: HttpRequest) -> impl Responder {
     let full_url = req.full_url();
