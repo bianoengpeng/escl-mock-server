@@ -23,6 +23,7 @@ mod model;
 
 use crate::model::{ScanJob, ScanSource};
 use actix_web::{web, App, HttpServer};
+use actix_web::middleware::Logger;
 use std::collections::HashMap;
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -66,37 +67,82 @@ async fn main() -> std::io::Result<()> {
         Ok(mdns) => {
             println!("mDNS daemon created successfully");
             
-            // 获取主机名（不使用IP地址）
-            let hostname = match std::env::var("COMPUTERNAME") {
-                Ok(name) => format!("{}.local.", name.to_lowercase()),
-                Err(_) => "escl-mock-scanner.local.".to_string(),
+            // 获取本机实际 IP 地址
+            let local_ip = match std::net::UdpSocket::bind("0.0.0.0:0") {
+                Ok(socket) => {
+                    match socket.connect("8.8.8.8:80") {
+                        Ok(_) => {
+                            match socket.local_addr() {
+                                Ok(addr) => addr.ip().to_string(),
+                                Err(_) => args.binding_address.clone(),
+                            }
+                        },
+                        Err(_) => args.binding_address.clone(),
+                    }
+                },
+                Err(_) => args.binding_address.clone(),
             };
+            
+            println!("Using local IP: {}", local_ip);
+            
+            // 使用更简单的主机名格式
+            let hostname = format!("escl-mock-scanner-{}.local.", 
+                                  local_ip.replace(".", "-"));
             
             println!("Using hostname: {}", hostname);
             
-            // 创建完整的 TXT 记录 - 使用 String 确保生命周期
-            let adminurl = format!("http://{}:{}{}", args.binding_address, args.port, args.scope);
+            // 创建符合 Windows 11 要求的 TXT 记录
+            let adminurl = format!("http://{}:{}{}", local_ip, args.port, args.scope);
+            let representation = format!("http://{}:{}/icon.png", local_ip, args.port);
+            
             let txt_records = vec![
                 ("txtvers", "1"),
                 ("ty", "eSCL Mock Scanner"),
                 ("rs", "eSCL"), 
-                ("vers", "2.0"),
-                ("pdl", "application/pdf,image/jpeg"),
+                ("vers", "2.6"),
+                ("pdl", "application/pdf,image/jpeg,application/octet-stream"),
                 ("cs", "color,grayscale,binary"),
-                ("is", "platen"),
+                ("is", "platen,adf"),
                 ("duplex", "F"),
                 ("note", "Mock eSCL Scanner"),
                 ("adminurl", adminurl.as_str()),
+                ("representation", representation.as_str()),
                 ("uuid", "550e8400-e29b-41d4-a716-446655440000"),
-                ("mfg", "Mock"),
-                ("mdl", "eSCL Scanner"),
+                ("mfg", "MockCompany"),
+                ("mdl", "eSCL-Mock-Scanner"),
+                ("usb_MFG", "MockCompany"),
+                ("usb_MDL", "eSCL Mock Scanner"),
+                // Windows 11 特定字段
+                ("product", "(eSCL Mock Scanner)"),
+                ("priority", "50"),
+                ("qtotal", "1"),
+                ("scan", "T"),
+                ("Scan", "T"),
+                ("Color", "T"),
+                ("Duplex", "F"),
+                ("Transparent", "T"),
+                ("kind", "document,photo"),
+                ("PaperMax", "legal-A4"),
+                ("URF", "none"),
+                ("rp", "eSCL"),
+                ("air", "username,password"),
+                ("UUID", "550e8400-e29b-41d4-a716-446655440000"),
+                // 添加 Windows 设备类别信息
+                ("printer-type", "0x809046"),  // 网络扫描仪类型
+                ("printer-state", "3"),        // 空闲状态
+                ("printer-state-reasons", "none"),
+                ("device-class", "hardcopy"),
+                ("device-kind", "scanner"),
+                ("device-make-and-model", "MockCompany eSCL Mock Scanner"),
+                ("device-uuid", "550e8400-e29b-41d4-a716-446655440000"),
             ];
             
+            // 注册主要的 _uscan._tcp 服务
             match ServiceInfo::new(
                 "_uscan._tcp.local.",
                 "eSCL Mock Scanner",
                 &hostname,
-                &args.binding_address,
+                &local_ip,
                 args.port,
                 &txt_records[..],
             ) {
@@ -104,14 +150,62 @@ async fn main() -> std::io::Result<()> {
                     println!("Service info created successfully");
                     match mdns.register(service_info) {
                         Ok(_) => {
-                            println!("mDNS service registered successfully");
-                            println!("Service available at: http://{}:{}{}", args.binding_address, args.port, args.scope);
+                            println!("mDNS _uscan._tcp service registered successfully");
                         },
-                        Err(e) => println!("Failed to register mDNS service: {}", e),
+                        Err(e) => println!("Failed to register _uscan._tcp service: {}", e),
                     }
                 },
-                Err(e) => println!("Failed to create service info: {}", e),
+                Err(e) => println!("Failed to create _uscan._tcp service info: {}", e),
             }
+            
+            // 也注册 _uscans._tcp 服务（安全版本）- 使用不同的服务名称
+            match ServiceInfo::new(
+                "_uscans._tcp.local.",
+                "eSCL Mock Scanner Secure",
+                &hostname,
+                &local_ip,
+                args.port,
+                &txt_records[..],
+            ) {
+                Ok(service_info) => {
+                    match mdns.register(service_info) {
+                        Ok(_) => {
+                            println!("mDNS _uscans._tcp service registered successfully");
+                        },
+                        Err(e) => println!("Failed to register _uscans._tcp service: {}", e),
+                    }
+                },
+                Err(e) => println!("Failed to create _uscans._tcp service info: {}", e),
+            }
+            
+            // 注册 HTTP 服务以提供设备描述
+            match ServiceInfo::new(
+                "_http._tcp.local.",
+                "eSCL Mock Scanner Web",
+                &hostname,
+                &local_ip,
+                args.port,
+                &[
+                    ("path", "/device.xml"),
+                    ("ty", "eSCL Mock Scanner"),
+                    ("note", "Device Description"),
+                ][..],
+            ) {
+                Ok(service_info) => {
+                    match mdns.register(service_info) {
+                        Ok(_) => {
+                            println!("mDNS HTTP service registered successfully");
+                        },
+                        Err(e) => println!("Failed to register HTTP service: {}", e),
+                    }
+                },
+                Err(e) => println!("Failed to create HTTP service info: {}", e),
+            }
+            
+            println!("Service available at: http://{}:{}{}", local_ip, args.port, args.scope);
+            
+            // 保持 mDNS 服务活跃
+            std::mem::forget(mdns);
         },
         Err(e) => {
             println!("Failed to create mDNS daemon: {}", e);
@@ -123,11 +217,18 @@ async fn main() -> std::io::Result<()> {
     println!("Starting HTTP server on {}:{}", args.binding_address, args.port);
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())  // 添加详细的请求日志
             .app_data(app_data.clone())
+            .service(escl_server::scanner_icon)  // 图标端点在根路径
+            .service(escl_server::root_info)     // 根路径设备信息
+            .service(escl_server::wsd_description) // WSD 设备描述
+            .service(escl_server::device_metadata) // Windows 设备元数据
+            .service(escl_server::ssdp_description) // SSDP 发现支持
             .service(
                 web::scope(&scope)
                     .service(escl_server::scanner_capabilities)
                     .service(escl_server::scanner_status)
+                    .service(escl_server::device_info)  // 添加设备信息端点
                     .service(escl_server::scan_job)
                     .service(escl_server::next_doc),
             )
